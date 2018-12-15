@@ -8,7 +8,7 @@
 # diffusion to anatomical registration - FSL epi_reg
 #
 # Ben Puccio
-# 2018-10-25
+# 2018-12-15
 
 # set the timing
 SECONDS=0
@@ -160,7 +160,7 @@ for fold in $(ls -d ${drive}/*/diff*.nii.gz); do
     3dmask_tool -input ${diffout}_eddy_brain_mask.nii.gz -prefix ${diffout}_eddy_brain_mask_fill.nii.gz -dilate_input 1 -2 -fill_holes
   fi
 
-  # 3dAutomask 
+  # 3dAutomask
 
   # # Register t2 to diff, use brain masks from t1 skullstrip
   # if [ ! -f ${diffout}_eddy_b0.nii.gz ]; then

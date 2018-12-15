@@ -8,7 +8,7 @@
 # segmentation - FSL FAST
 #
 # Ben Puccio
-# 2018-12-14
+# 2018-12-15
 
 # set the timing
 SECONDS=0

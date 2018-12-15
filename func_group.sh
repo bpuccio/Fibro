@@ -6,11 +6,8 @@
 #
 #
 #
-#
-#
-#
 # Ben Puccio
-# 2018-12-24
+# 2018-12-15
 
 data=/Volumes/ben_drive/_FIBROMIALGIA/niftibeast
 output=/Users/ben/Documents/_FIBROMIALGIA/niftibeast
