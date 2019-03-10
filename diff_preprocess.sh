@@ -5,7 +5,7 @@
 # eddy correction - FSL eddy
 # tensor fitting - FSL dtifit
 # tractography - FSL probtrackx2
-# diffusion to anatomical registration - FSL epi_reg
+#
 #
 # Ben Puccio
 # 2018-12-15
@@ -18,8 +18,11 @@ mni_1mm=/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz
 mni_2mm=/usr/local/fsl/data/standard/MNI152_T1_2mm_brain.nii.gz
 mni_3mm=/Users/ben/Documents/cpac_image_resources/MNI_3mm/MNI152_T1_3mm_brain.nii.gz
 
-data=/Users/ben/Documents/_FIBROMIALGIA/nifti
-drive=/Volumes/ben_drive/_FIBROMIALGIA/nifti
+data=/Users/ben/Documents/_FIBROMIALGIA/nifti_fibro
+drive=/Volumes/ben_drive/_FIBROMIALGIA/nifti_fibro
+if [ ! -d ${data}/tbss ]; then
+  mkdir ${data}/tbss
+fi
 
 #dwelltime
 echo_spacing=0.000475
@@ -41,15 +44,24 @@ for fold in $(ls -d ${drive}/*/diff*.nii.gz); do
   fi
 
   ## Get path names from each file
-  bvals=$(ls -d ${base_path}/diff*.bval)
-  bvecs=$(ls -d ${base_path}/diff*.bvec)
+  bvals=${base_path}/diff.bval
+  bvecs=${base_path}/diff.bvec
+  if [ ! -f ${bvals} ]; then
+    bvals=$(ls -d ${base_path}/diff*.bval)
+  fi
+  if [ ! -f ${bvecs} ]; then
+    bvecs=$(ls -d ${base_path}/diff*.bvec)
+  fi
 
   f=$(ls -d ${base_path}/fieldmap_diff*.nii.gz)
-  for pathed in $f; do
-    if [[ ${pathed} == *"phase"* ]]; then
-      fmapphase=${pathed}
+  fmapmag=0
+  for fname in ${f}; do
+    if [[ ${fname} == *"ph"* ]]; then
+      fmapphase=${fname}
     else
-      fmapmag=${pathed}
+      if [[ ${fmapmag} == 0 ]]; then
+        fmapmag=${fname}
+      fi
     fi
   done
 
@@ -147,6 +159,11 @@ for fold in $(ls -d ${drive}/*/diff*.nii.gz); do
     for ((i=1; i<=${volumes}; i+=1)); do indx="$indx 1"; done
     echo $indx > ${diffout}_index.txt
   fi
+
+
+  # 3dcalc -a ${fmapout}.nii.gz -expr "a*2*3.14159" -prefix ${fmapout}_hz.nii.gz
+
+
   ## Run eddy correction (fsl)
   if [ ! -f ${diffout}_eddy.nii.gz ]; then
     eddy --imain=${diffout}_fugue.nii.gz --mask=${diffout}_fugue_brain_mask.nii.gz --index=${diffout}_index.txt --acqp=${diffout}_acqparams.txt --bvecs=${bvecs} --bvals=${bvals}  --repol --out=${diffout}_eddy -v
@@ -188,11 +205,23 @@ for fold in $(ls -d ${drive}/*/diff*.nii.gz); do
 
   ## Tensor fitting
   if [ ! -f ${diffout}_tensor_FA.nii.gz ]; then
-    dtifit -k ${diffout}_eddy.nii.gz -o ${diffout}_tensor -m ${diffout}_eddy_brain_mask_fill.nii.gz -r ${diffout}_eddy.eddy_rotated_bvecs -b ${bvals} --sse --kurt -V
+    dtifit -k ${diffout}_eddy.nii.gz -o ${diffout}_tensor -m ${diffout}_eddy_brain_mask_fill.nii.gz -r ${diffout}_eddy.eddy_rotated_bvecs -b ${bvals} -V
   fi
   # copy FA map to folder for tbss processing, MAKE SURE TO HAVE FOLDER IN DATA PATH
-  if [ ! -f ${data}/mytbss/${sub}_FA.nii.gz ]; then
-    3dcopy ${diffout}_tensor_FA.nii.gz ${data}/mytbss/${sub}.nii.gz
+  if [ ! -f ${data}/tbss/${sub}_FA.nii.gz ]; then
+    3dcopy ${diffout}_tensor_FA.nii.gz ${data}/tbss/${sub}.nii.gz
+  fi
+
+  ## Kurtosis tensor fitting
+  if [ ! -f ${diffout}_kurt_FA.nii.gz ]; then
+    dtifit -k ${diffout}_eddy.nii.gz -o ${diffout}_kurt -m ${diffout}_eddy_brain_mask_fill.nii.gz -r ${diffout}_eddy.eddy_rotated_bvecs -b ${bvals} --kurt --kurtdir -V
+  fi
+  # copy FA map to folder for tbss processing, MAKE SURE TO HAVE FOLDER IN DATA PATH
+  if [ ! -d ${data}/tbss_kurt ]; then
+    mkdir ${data}/tbss_kurt
+  fi
+  if [ ! -f ${data}/tbss_kurt/${sub}_FA.nii.gz ]; then
+    3dcopy ${diffout}_kurt_FA.nii.gz ${data}/tbss_kurt/${sub}.nii.gz
   fi
 
   ## Registration of DMRI
@@ -210,6 +239,8 @@ for fold in $(ls -d ${drive}/*/diff*.nii.gz); do
   # if [ ! -f ${diffout}_tensor_FA_mni.nii.gz ]; then
   #   antsApplyTransforms -d 3 -i ${diffout}_tensor_FA.nii.gz -o ${diffout}_tensor_FA_mni.nii.gz -r ${mni_3mm} -t ${diffout}_1Warp.nii.gz -t ${diffout}_0GenericAffine.mat -t ${t1out}_1Warp.nii.gz -t ${t1out}_0GenericAffine.mat -v 1
   # fi
+
+  #diffusion to anatomical registration - FSL epi_reg???
 
   # # Estimate Diff Parameters for Probabilistic Tracking - bedpostx
   # if [ ! -f ${diffout}_bedpost.nii.gz ]; then

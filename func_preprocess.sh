@@ -15,12 +15,8 @@
 SECONDS=0
 
 # set paths
-mni_1mm=/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz
-mni_2mm=/usr/local/fsl/data/standard/MNI152_T1_2mm_brain.nii.gz
 mni_3mm=/Users/ben/Documents/cpac_image_resources/MNI_3mm/MNI152_T1_3mm_brain.nii.gz
 mni_4mm=/Users/ben/Documents/cpac_image_resources/MNI_4mm/MNI152_T1_4mm_brain.nii.gz
-mni_1mm_noss=/usr/local/fsl/data/standard/MNI152_T1_1mm.nii.gz
-mni_2mm_noss=/usr/local/fsl/data/standard/MNI152_T1_2mm.nii.gz
 mni_3mm_noss=/Users/ben/Documents/cpac_image_resources/MNI_3mm/MNI152_T1_3mm.nii.gz
 mni_4mm_noss=/Users/ben/Documents/cpac_image_resources/MNI_4mm/MNI152_T1_4mm.nii.gz
 PNAS_Smith09=/Users/ben/Documents/PNAS_Smith09_rsn10_4mm.nii.gz
@@ -32,9 +28,9 @@ suma_MNI_N27=/Users/ben/Documents/suma_MNI_N27/aparc+aseg.nii
 # Choose seg
 choose_seg=fast
 
-data=/Users/ben/Documents/_FIBROMIALGIA/niftibeast
-drive=/Volumes/ben_drive/_FIBROMIALGIA/niftibeast
-stim_path=/Users/ben/Documents/FIBRO_BEHAV_DATA
+data=/Users/ben/Documents/_FIBROMIALGIA/nifti_controls
+drive=/Volumes/ben_drive/_FIBROMIALGIA/nifti_controls
+stim_path=/Users/ben/Documents/FIBRO_BEHAV_DATA_HC
 
 # dwelltime
 eff_echo_spacing=0.00029000167
@@ -112,12 +108,13 @@ for fold in $(ls -d ${drive}/*/fmri*.nii.gz); do
 
   ## Fieldmap Correction
   ## Get path names from each file
-  f=$(ls -d ${base_path}/fieldmap_fMRI*.nii.gz)
+  f=$(ls -d ${base_path}/fieldmap_fMRI_${num}*.nii.gz)
+  fmapmag=0
   for fname in ${f}; do
-    if [[ ${fname} == *"_"${num}* ]]; then
-      if [[ ${fname} == *"phase"* ]]; then
-        fmapphase=${fname}
-      else
+    if [[ ${fname} == *"ph"* ]]; then
+      fmapphase=${fname}
+    else
+      if [[ ${fmapmag} == 0 ]]; then
         fmapmag=${fname}
       fi
     fi
@@ -127,6 +124,7 @@ for fold in $(ls -d ${drive}/*/fmri*.nii.gz); do
     3dcopy ${fmapmag} ${fmapout}_mag.nii.gz
     3drefit -deoblique ${fmapout}_mag.nii.gz
   fi
+  fmapmag=0
   if [ ! -f ${fmapout}_phase.nii.gz ]; then
     3dcopy ${fmapphase} ${fmapout}_phase.nii.gz
     3drefit -deoblique ${fmapout}_phase.nii.gz
@@ -356,7 +354,7 @@ for fold in $(ls -d ${drive}/*/fmri*.nii.gz); do
         3dresample -master ${fmri}_mni_brain.nii.gz -input ${t1out}_wm_mni.nii.gz -prefix ${fmri}_wm_mni.nii.gz -rmode Li
         3dcalc -a ${fmri}_wm_mni.nii.gz -b ${fmri}_mni_brain_mask_final.nii.gz -expr 'b * step(a-0.8)' -prefix ${fmri}_wm_mni_mask.nii.gz -datum short
       fi
-      if [ ! -f ${fmri}_gm_mni_blur.nii.gz ]; then
+      if [ ! -f ${t1out}_gm_mni_blur.nii.gz ]; then
         3dmerge -1blur_fwhm 4 -doall -prefix ${t1out}_gm_mni_blur.nii.gz ${t1out}_gm_mni.nii.gz
       fi
       if [ ! -f ${fmri}_gm_mni_mask.nii.gz ]; then
@@ -436,6 +434,9 @@ for fold in $(ls -d ${drive}/*/fmri*.nii.gz); do
 
   ## Resting state analysis
   if [[ ${fmri} == ${frestout} ]]; then
+
+
+    # 1dBport -nodata 150 ${tr} -band 0.01 1 -invert -nozero > bandpass_rall.1D
 
     ## 3dDeconvolve - regress out motion (demean & derivative), wm & ventricle masks
     if [ ! -f ${fmri}_x1D.xmat.1D ]; then
@@ -744,7 +745,7 @@ for fold in $(ls -d ${drive}/*/fmri*.nii.gz); do
         3dSynthesize -cbucket ${fmri_task}_cbucket+orig. -matrix ${fmri_task}_x1D.xmat.1D -select 9 -prefix ${fmri_task}_neutral.nii.gz
       fi
 
-      ## Temporal filtering, smoothing with FWHM 4mm
+      ## Temporal filtering
       if [ ! -f ${fmri_task}_blur_filtered.nii.gz ]; then
         3dTproject -bandpass 0.01 0.1 -input ${fmri_task}_clean.nii.gz -concat ${fmri_task}_runs.1D -prefix ${fmri_task}_blur_filtered.nii.gz -verb
       fi

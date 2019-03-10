@@ -7,7 +7,7 @@ from convert_eprime.utils import remove_unicode
 
 from convert_eprime.convert import text_to_csv
 
-path='/Users/ben/Documents/FIBRO_BEHAV_DATA/'
+path='/Users/ben/Documents/FIBRO_BEHAV_DATA_HC/'
 csv_names=glob.glob(path+'*.txt')
 
 for i in csv_names:

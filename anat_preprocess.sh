@@ -18,8 +18,8 @@ mni_1mm=/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz
 mni_2mm=/usr/local/fsl/data/standard/MNI152_T1_2mm_brain.nii.gz
 mni_1mm_noss=/usr/local/fsl/data/standard/MNI152_T1_1mm.nii.gz
 
-drive=/Volumes/ben_drive/_FIBROMIALGIA/niftibeast
-data=/Users/ben/Documents/_FIBROMIALGIA/niftibeast
+drive=/Volumes/ben_drive/_FIBROMIALGIA/nifti_controls
+data=/Users/ben/Documents/_FIBROMIALGIA/nifti_controls
 if [ ! -d ${data} ]; then
   mkdir ${data}
 fi

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 # Set path, get csv file names
-path='/Users/ben/Documents/FIBRO_BEHAV_DATA/'
+path='/Users/ben/Documents/FIBRO_BEHAV_DATA_HC/'
 csv_names=glob.glob(path+'*.csv')
 
 # Define variables
@@ -36,9 +36,9 @@ for i in csv_names:
 
     # Get subject numbers and run numbers
     filename = i[:-4]
-    sub_run_num = filename[-4:]
-    if sub_run_num[0] =='-':
-        sub_run_num = sub_run_num[-3:]
+    sub_run_num = filename[-5:]
+    # if sub_run_num[0] =='-':
+    #     sub_run_num = sub_run_num[-3:]
     sub = sub_run_num[:-2]
     run = sub_run_num[-1:]
 
